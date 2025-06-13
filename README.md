@@ -1,21 +1,23 @@
-# Solana Wallet Balance Widget
+# IDCrypt Wallet Widget
 
-Widget HTML ringan untuk menampilkan saldo token Solana dan ARDION langsung di blog atau website Anda.
+Solana wallet balance widget that supports Phantom, Jupiter, and displays ARDION + SOL balances.
 
-## 🔧 Fitur
+## 🛠 Features
+- Connect / Disconnect Wallet
+- Display wallet address
+- Show ARDION & SOL balance
+- Compact, dark-themed design
+- Embeddable as an iframe in Blogger / websites
 
-- Koneksi ke Phantom, Jupiter, dan Solana-compatible wallet
-- Menampilkan saldo SOL dan token ARDION
-- Ringan, responsif, dan cocok untuk dark theme
-- Dapat diembed dengan mudah via iframe
+## 🔗 Live Demo
+[https://idcrypt.github.io/idcrypt-wallet-widget/](https://idcrypt.github.io/idcrypt-wallet-widget/)
 
-## 💻 Live Demo
+## 🚀 Deployment
+Hosted via GitHub Pages on `main` branch.
 
-👉 https://idcrypt.github.io/idcrypt-wallet-widget
+To deploy updates:
 
-## 📦 Embed ke Website/Blog
-
-Masukkan kode berikut ke blog Anda:
-
-```html
-<iframe src="https://idcrypt.github.io/idcrypt-wallet-widget" width="200" height="120" style="border: none; background: transparent;" scrolling="no"></iframe>
+```bash
+git add .
+git commit -m "update widget"
+git push origin main
