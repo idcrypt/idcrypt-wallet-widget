@@ -1,90 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IDCrypt Wallet Widget</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Solana Wallet Widget</title>
+  <script src="https://unpkg.com/@solana/web3.js@1.88.2/lib/index.iife.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f9f9f9;
       margin: 0;
-      padding: 10px;
+      font-family: sans-serif;
+      background-color: #121212;
+      color: #fff;
     }
-    #wallet-box {
-      background: #ffffff;
-      border: 2px solid #c0c0c0;
-      border-radius: 12px;
-      padding: 15px;
-      max-width: 300px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    #wallet-widget {
       display: flex;
       flex-direction: column;
       align-items: center;
-    }
-    .ant-icon {
-      font-size: 30px;
-      margin-bottom: 10px;
-    }
-    button {
-      background-color: #2d8fdd;
-      color: white;
-      border: none;
-      padding: 8px 14px;
+      padding: 0.5em;
       border-radius: 8px;
+      font-size: 0.9em;
+    }
+    #connect-button {
+      padding: 0.4em 1em;
+      background-color: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
       cursor: pointer;
-      font-size: 14px;
-      margin-bottom: 10px;
     }
-    button:hover {
-      background-color: #1a6fb3;
-    }
-    #wallet-address, #balances {
-      font-size: 12px;
+    #balances {
+      margin-top: 0.5em;
       text-align: center;
-      margin: 5px 0;
+      font-size: 0.85em;
     }
   </style>
-  <script type="module">
-    import { connect, getAccount, getProvider } from "https://cdn.jsdelivr.net/npm/@solana/wallet-adapter-wallets@0.1.16/dist/browser/index.js";
-    import { Connection, PublicKey } from "https://cdn.jsdelivr.net/npm/@solana/web3.js@1.76.0/lib/index.iife.min.js";
-
-    const SOLANA_MAINNET = 'https://api.mainnet-beta.solana.com';
-    const ARD_MINT = new PublicKey('5k88CcGv7A4ymH8aZjZ5TW8UU681bZDZzkx82xBNsT8B');
-
-    let walletAddressDiv, balancesDiv;
-
-    async function connectWallet() {
-      const provider = await getProvider();
-      if (!provider) return alert('Wallet not found. Install Phantom or Jupiter.');
-      await provider.connect();
-      const pubkey = provider.publicKey.toString();
-      walletAddressDiv.textContent = `Wallet: ${pubkey}`;
-
-      const connection = new Connection(SOLANA_MAINNET);
-      const solBalance = await connection.getBalance(provider.publicKey);
-      const ardTokenAccounts = await connection.getParsedTokenAccountsByOwner(
-        provider.publicKey,
-        { mint: ARD_MINT }
-      );
-      const ardAmount = (ardTokenAccounts.value[0]?.account?.data?.parsed?.info?.tokenAmount?.uiAmount || 0);
-      
-      balancesDiv.innerHTML = `SOL: ${(solBalance / 1e9).toFixed(4)}<br>ARD: ${ardAmount}`;
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('connect-button').addEventListener('click', connectWallet);
-      walletAddressDiv = document.getElementById('wallet-address');
-      balancesDiv = document.getElementById('balances');
-    });
-  </script>
 </head>
 <body>
-  <div id="wallet-box">
-    <div class="ant-icon">🐜</div>
-    <button id="connect-button">Connect Wallet</button>
-    <div id="wallet-address"></div>
+  <div id="wallet-widget">
+    <button id="connect-button">🔌 Connect Wallet</button>
     <div id="balances"></div>
   </div>
+
+  <script>
+    const connectButton = document.getElementById('connect-button');
+    const balancesDiv = document.getElementById('balances');
+    const ARDION_MINT = '5k88CcGv7A4ymH8aZjZ5TW8UU681bZDZzkx82xBNsT8B';
+
+    let provider;
+
+    async function getProvider() {
+      if ('solana' in window) {
+        const anyWindow = window;
+        return anyWindow.solana;
+      }
+      window.open('https://phantom.app/', '_blank');
+    }
+
+    async function connectWallet() {
+      provider = await getProvider();
+      if (!provider) return;
+
+      try {
+        const resp = await provider.connect();
+        const publicKey = resp.publicKey.toString();
+        const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
+
+        const pubKeyObj = new solanaWeb3.PublicKey(publicKey);
+        const solBalance = await connection.getBalance(pubKeyObj);
+        const sol = (solBalance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4);
+
+        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(pubKeyObj, {
+          programId: new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+        });
+
+        const ardionAccount = tokenAccounts.value.find(account =>
+          account.account.data.parsed.info.mint === ARDION_MINT
+        );
+
+        const ard = ardionAccount ? ardionAccount.account.data.parsed.info.tokenAmount.uiAmount : 0;
+
+        balancesDiv.innerHTML = `
+          <div><strong>Wallet:</strong> ${publicKey.slice(0, 4)}...${publicKey.slice(-4)}</div>
+          <div>SOL: ${sol}</div>
+          <div>ARDION: ${ard}</div>
+        `;
+
+        connectButton.textContent = '✅ Connected';
+        connectButton.disabled = true;
+
+      } catch (err) {
+        console.error('Connection failed', err);
+      }
+    }
+
+    connectButton.addEventListener('click', connectWallet);
+  </script>
 </body>
 </html>
