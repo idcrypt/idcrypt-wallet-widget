@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>ARDION Wallet Widget</title>
+  <script src="https://unpkg.com/@solana/web3.js@1.88.2/lib/index.iife.js"></script>
+  <script src="https://unpkg.com/@solana/wallet-adapter-base@0.10.3/lib/index.umd.min.js"></script>
+  <script src="https://unpkg.com/@solana/wallet-adapter-wallets@0.10.2/lib/index.umd.min.js"></script>
+  <style>
+    body{margin:0;padding:1em;background:#111;color:#eee;font-family:sans-serif;}
+    #widget{max-width:350px;margin:auto;background:#222;padding:1em;border:1px solid #444;border-radius:12px;}
+    button{width:100%;margin-top:0.75em;padding:0.6em;border:none;border-radius:8px;color:#fff;cursor:pointer;}
+    #connect{background:#4caf50;}#disconnect{background:#f44336;display:none;}
+    p{word-break:break-all;margin-top:0.5em;}
+  </style>
+</head>
+<body>
+  <div id="widget">
+    <button id="connect">Connect Wallet</button>
+    <button id="disconnect">Disconnect</button>
+    <p id="address"></p>
+    <p id="sol"></p>
+    <p id="ard"></p>
+  </div>
+  <script>
+    const { PhantomWalletAdapter, SolflareWalletAdapter, BackpackWalletAdapter } =
+      window['@solana/wallet-adapter-wallets'];
+    const { Connection, PublicKey, LAMPORTS_PER_SOL } = solanaWeb3;
+    const ARDION_MINT = new PublicKey('5k88CcGv7A4ymH8aZjZ5TW8UU681bZDZzkx82xBNsT8B');
+    const connection = new Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
+    const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter(), new BackpackWalletAdapter()];
+    let wallet = null;
+
+    async function connect() {
+      for (const w of wallets) {
+        if (w.readyState === 'Installed') {
+          wallet = w;
+          try {
+            await wallet.connect();
+            break;
+          } catch {}
+        }
+      }
+      if (!wallet) return alert('Please install Phantom, Solflare, or Backpack wallet');
+      document.getElementById('address').textContent = `🔗 ${wallet.publicKey}`;
+      document.getElementById('connect').style.display = 'none';
+      document.getElementById('disconnect').style.display = 'block';
+      await update();
+    }
+
+    async function disconnect() {
+      await wallet.disconnect();
+      wallet = null;
+      ['address', 'sol', 'ard'].forEach(id => document.getElementById(id).textContent = '');
+      document.getElementById('connect').style.display = 'block';
+      document.getElementById('disconnect').style.display = 'none';
+    }
+
+    async function update() {
+      const pub = wallet.publicKey;
+      const solBal = await connection.getBalance(pub);
+      document.getElementById('sol').textContent = `💰 SOL: ${(solBal / LAMPORTS_PER_SOL).toFixed(4)}`;
+      const toks = await connection.getParsedTokenAccountsByOwner(pub, {
+        programId: new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
+      });
+      const acct = toks.value.find(a => a.account.data.parsed.info.mint === ARDION_MINT.toString());
+      document.getElementById('ard').textContent = `🪙 ARDION: ${acct ? acct.account.data.parsed.info.tokenAmount.uiAmount : 0}`;
+    }
+
+    document.getElementById('connect').onclick = connect;
+    document.getElementById('disconnect').onclick = disconnect;
+  </script>
+</body>
+</html>
